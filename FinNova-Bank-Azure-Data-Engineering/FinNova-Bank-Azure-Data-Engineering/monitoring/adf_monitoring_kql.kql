@@ -1,0 +1,19 @@
+// Table/column availability depends on diagnostic settings.
+ADFActivityRun
+| where TimeGenerated > ago(24h)
+| where Status =~ "Failed"
+| project TimeGenerated, PipelineName, ActivityName, Status, ErrorMessage, ResourceId
+| order by TimeGenerated desc
+
+ADFPipelineRun
+| where TimeGenerated > ago(24h)
+| where Status =~ "Failed"
+| project TimeGenerated, PipelineName, RunId, Status, FailureType, Parameters, ResourceId
+| order by TimeGenerated desc
+
+ADFActivityRun
+| where TimeGenerated > ago(7d) and Status =~ "Succeeded"
+| extend DurationMinutes = DurationMs / 60000.0
+| where DurationMinutes > 30
+| project TimeGenerated, PipelineName, ActivityName, DurationMinutes, ResourceId
+| order by DurationMinutes desc

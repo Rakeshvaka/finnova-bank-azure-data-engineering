@@ -1,0 +1,86 @@
+{
+  "name": "pl_metadata_ingestion_TEMPLATE",
+  "properties": {
+    "description": "Illustrative template only. Replace datasets/linked services and validate in your own ADF factory.",
+    "parameters": {
+      "p_config_table": {
+        "type": "string",
+        "defaultValue": "dbo.ingestion_config"
+      },
+      "p_batch_id": {
+        "type": "string",
+        "defaultValue": "SET_AT_RUNTIME"
+      }
+    },
+    "activities": [
+      {
+        "name": "Lookup_Ingestion_Config",
+        "type": "Lookup",
+        "dependsOn": [],
+        "typeProperties": {
+          "source": {
+            "type": "SqlSource",
+            "sqlReaderQuery": "SELECT * FROM dbo.ingestion_config WHERE is_active = 1"
+          },
+          "dataset": {
+            "referenceName": "ds_control_sql_TEMPLATE",
+            "type": "DatasetReference"
+          },
+          "firstRowOnly": false
+        }
+      },
+      {
+        "name": "ForEach_Ingestion_Config",
+        "type": "ForEach",
+        "dependsOn": [
+          {
+            "activity": "Lookup_Ingestion_Config",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "items": {
+            "value": "@activity('Lookup_Ingestion_Config').output.value",
+            "type": "Expression"
+          },
+          "isSequential": true,
+          "activities": [
+            {
+              "name": "Copy_To_Bronze",
+              "type": "Copy",
+              "dependsOn": [],
+              "inputs": [
+                {
+                  "referenceName": "ds_source_dynamic_TEMPLATE",
+                  "type": "DatasetReference"
+                }
+              ],
+              "outputs": [
+                {
+                  "referenceName": "ds_bronze_dynamic_TEMPLATE",
+                  "type": "DatasetReference"
+                }
+              ],
+              "typeProperties": {
+                "source": {
+                  "type": "SqlSource",
+                  "sqlReaderQuery": "CONFIGURE_SOURCE_QUERY"
+                },
+                "sink": {
+                  "type": "ParquetSink"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "annotations": [
+      "template",
+      "metadata-driven-ingestion",
+      "not-a-live-export"
+    ]
+  }
+}
